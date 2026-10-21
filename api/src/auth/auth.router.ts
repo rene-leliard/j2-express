@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { HttpError } from '../errors.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { validate } from '../middlewares/validate.js';
-import { hashPassword } from './auth.service.js';
+import { hashPassword, signAccessToken, verifyPassword } from './auth.service.js';
 import { users } from './user.repository.js';
 import { LoginSchema, RegisterSchema, type Credentials } from './user.schema.js';
 
@@ -22,7 +22,13 @@ authRouter.post('/register', validate(RegisterSchema), async (req, res) => {
 // TODO 3 (TD JWT, étape 2) : retrouver l'utilisateur par son email, vérifier le mot de passe,
 // signer un jeton. Email inconnu ou mot de passe faux → le MÊME 401 'Invalid credentials' (on ne dit pas lequel).
 authRouter.post('/login', validate(LoginSchema), async (_req, _res) => {
-  throw new HttpError(501, 'Not Implemented');
+  const { email, password } = _req.body as Credentials;
+  const toBechekedAgain = await users.findByEmail(email);
+  if (!toBechekedAgain || !(await verifyPassword(password, toBechekedAgain.password))) {
+    throw new HttpError(401, 'Invalid credentials');
+  }
+  const { accessToken, expiresIn } = signAccessToken(toBechekedAgain);
+  _res.json({ accessToken, tokenType: 'Bearer', expiresIn });
 });
 
 // GET /api/auth/me (protégée) → 200 { id, email } : l'utilisateur du jeton

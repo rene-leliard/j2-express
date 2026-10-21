@@ -7,11 +7,11 @@ https://github.com/auth0/node-jsonwebtoken · https://jwt.io
 ## bcrypt : hacher un mot de passe
 
 ```ts
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
 
-const hash = await bcrypt.hash('correct-horse', 10);   // "$2b$10$N9qo8uLOickgx2ZMRZoMye…" (60 caractères)
-await bcrypt.compare('correct-horse', hash);           // true
-await bcrypt.compare('wrong', hash);                   // false
+const hash = await bcrypt.hash("correct-horse", 10); // "$2b$10$N9qo8uLOickgx2ZMRZoMye…" (60 caractères)
+await bcrypt.compare("correct-horse", hash); // true
+await bcrypt.compare("wrong", hash); // false
 ```
 
 - **Hacher n'est pas chiffrer** : on ne retrouve jamais le mot de passe à partir du hachage. Pour vérifier, on
@@ -43,21 +43,28 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9 . eyJzdWIiOiIxIiwiZW1haWwiOiJjb2FjaEBnZy1sZ
   on ne peut pas « déconnecter » un jeton avant son expiration (d'où des durées courtes et le refresh token).
 
 ```ts
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
-const token = jwt.sign({ sub: '1', email }, process.env.JWT_SECRET!, { algorithm: 'HS256', expiresIn: '1h' });
-const payload = jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ['HS256'] }) as jwt.JwtPayload;
-payload.sub; payload.email; payload.exp;
+const token = jwt.sign({ sub: "1", email }, process.env.JWT_SECRET!, {
+  algorithm: "HS256",
+  expiresIn: "1h",
+});
+const payload = jwt.verify(token, process.env.JWT_SECRET!, {
+  algorithms: ["HS256"],
+}) as jwt.JwtPayload;
+payload.sub;
+payload.email;
+payload.exp;
 jwt.decode(token); // lit SANS vérifier : seulement pour lire iat/exp d'un jeton qu'on vient de signer
 ```
 
 ### Les erreurs de jsonwebtoken
 
-| Erreur | Quand | Réponse |
-|---|---|---|
-| `jwt.TokenExpiredError` | `exp` est passé | `401 Token expired` |
+| Erreur                  | Quand                                                | Réponse             |
+| ----------------------- | ---------------------------------------------------- | ------------------- |
+| `jwt.TokenExpiredError` | `exp` est passé                                      | `401 Token expired` |
 | `jwt.JsonWebTokenError` | signature fausse, jeton mal formé, algorithme refusé | `401 Invalid token` |
-| `jwt.NotBeforeError` | claim `nbf` dans le futur (rare) | `401 Invalid token` |
+| `jwt.NotBeforeError`    | claim `nbf` dans le futur (rare)                     | `401 Invalid token` |
 
 `TokenExpiredError` hérite de `JsonWebTokenError` : testez-la **en premier** avec `instanceof`.
 
@@ -78,8 +85,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs…
 Un schéma (`Bearer`, « porteur » : qui a le jeton a l'accès), un espace, le jeton. Côté serveur :
 
 ```ts
-const match = /^Bearer (\S+)$/.exec(req.headers.authorization ?? '');
-if (!match) throw new HttpError(401, 'Unauthorized');
+const match = /^Bearer (\S+)$/.exec(req.headers.authorization ?? "");
+if (!match) throw new HttpError(401, "Unauthorized");
 const token = match[1];
 ```
 
@@ -98,23 +105,23 @@ Dans **Swagger UI** : bouton **Authorize** (en haut à droite), collez le `acces
 
 ## 401 ou 403 ?
 
-| | Sens | Exemple |
-|---|---|---|
-| **401 Unauthorized** | « je ne sais pas qui tu es » : pas de jeton, jeton invalide ou expiré | toute la journée |
-| **403 Forbidden** | « je sais qui tu es, et tu n'as pas le droit » | un fan qui veut supprimer une équipe (rôles : pas aujourd'hui) |
+|                      | Sens                                                                  | Exemple                                                        |
+| -------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **401 Unauthorized** | « je ne sais pas qui tu es » : pas de jeton, jeton invalide ou expiré | toute la journée                                               |
+| **403 Forbidden**    | « je sais qui tu es, et tu n'as pas le droit »                        | un fan qui veut supprimer une équipe (rôles : pas aujourd'hui) |
 
 ## Le middleware, en entier
 
 ```ts
 export const requireAuth: RequestHandler = (req, res, next) => {
-  const match = /^Bearer (\S+)$/.exec(req.headers.authorization ?? '');
-  if (!match) throw new HttpError(401, 'Unauthorized');
+  const match = /^Bearer (\S+)$/.exec(req.headers.authorization ?? "");
+  if (!match) throw new HttpError(401, "Unauthorized");
   res.locals.user = verifyAccessToken(match[1]!); // { id, email } ; lève 401 si expiré ou invalide
   next();
 };
 
 // par route, AVANT la validation :
-teamRouter.post('/', requireAuth, validate(TeamSchema), handler);
+teamRouter.post("/", requireAuth, validate(TeamSchema), handler);
 ```
 
 Pourquoi par route et pas `app.use(requireAuth)` : les lectures restent publiques. Pourquoi avant `validate` : un
