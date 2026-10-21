@@ -33,6 +33,6 @@ authRouter.post('/login', validate(LoginSchema), async (_req, _res) => {
 
 // GET /api/auth/me (protégée) → 200 { id, email } : l'utilisateur du jeton
 // TODO 5 (TD JWT, étape 3) : renvoyer res.locals.user, déposé par requireAuth.
-authRouter.get('/me', requireAuth, async (_req, _res) => {
-  throw new HttpError(501, 'Not Implemented');
+authRouter.get('/me', requireAuth, async (req, res) => {
+  res.status(200).json(res.locals.user);
 });

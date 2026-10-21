@@ -2,9 +2,7 @@
 // signer / vérifier un jeton (JWT). Le routeur et le middleware appellent ces fonctions.
 import { HttpError } from '../errors.js';
 import bcrypt from "bcryptjs";
-import { access } from 'fs';
 import jwt from "jsonwebtoken";
-import { userInfo } from 'os';
 
 const hash = await bcrypt.hash("correct-horse", 10);
 await bcrypt.compare("correct-horse", hash);
@@ -59,9 +57,9 @@ export function signAccessToken(_user: AuthUser): { accessToken: string; expires
  * reconstruire l'AuthUser depuis le payload. Un jeton expiré → HttpError(401, 'Token expired') ;
  * tout autre problème (signature, format) → HttpError(401, 'Invalid token').
  */
-export function verifyAccessToken(_token: string): AuthUser {
+export function verifyAccessToken(token: string): AuthUser {
   try {
-    const payload = jwt.verify(_token, process.env.JWT_SECRET!, {
+    const payload = jwt.verify(token, process.env.JWT_SECRET!, {
       algorithms: ["HS256"],
     }) as jwt.JwtPayload;
 
